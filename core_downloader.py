@@ -32,13 +32,24 @@ def download_episodes(urls, output_dir, title, episode_numbers, logger=None):
                 '--newline',  # 确保进度输出为逐行模式
                 '--progress',  # 显示进度条
                 '--no-warnings',
+                '--retries', '10',
+                '--fragment-retries', '20',
+                '--file-access-retries', '5',
+                '--no-part',
+                '--hls-use-mpegts',
+                '--console-title',  # 在终端标题显示进度
+                '--compat-options', 'no-live-chat',  # 禁用非必要功能
+                '--throttled-rate', '200K',  # 最低保留下载速度
+                '--socket-timeout', '30',  # 网络超时设置
+                '--source-address', '0.0.0.0',  # 多IP绑定
                 '-o', output_file,
                 '--merge-output-format', 'mp4',
+                '--verbose',  # 关键！启用详细日志
                 m3u8_url
             ]
 
             # 创建进度日志文件
-            progress_log = os.path.join(output_dir, f"{title}_第{ep_num}集_progress.log")
+            progress_log = os.path.join(output_dir, f"第{ep_num}集_progress.log")
 
             with open(progress_log, 'w') as log_file:
                 process = subprocess.Popen(

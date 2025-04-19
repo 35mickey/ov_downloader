@@ -59,6 +59,14 @@ def extract_title(soup, url):
         if h1_tag:
             title = h1_tag.get_text().strip()
 
+    # 如果有《》，则只提取其中的内容
+    if title and '《' in title and '》' in title:
+        # 使用正则表达式提取《》中的内容
+        import re
+        match = re.search(r'《(.*?)》', title)
+        if match:
+            title = match.group(1)
+
     return title
 
 def extract_episode_urls(soup, base_url):

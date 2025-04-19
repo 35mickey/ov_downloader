@@ -6,18 +6,12 @@ import logging
 from datetime import datetime
 
 def setup_logging(title):
-    """设置简洁的日志记录"""
-    log_dir = os.path.join(os.path.dirname(__file__), 'logs')
-    os.makedirs(log_dir, exist_ok=True)
-
-    log_file = os.path.join(log_dir, f"{title}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log")
-
+    """设置简洁的日志记录（仅输出到控制台）"""
     logging.basicConfig(
         level=logging.INFO,
         format='%(asctime)s - %(levelname)s - %(message)s',
         handlers=[
-            logging.FileHandler(log_file),
-            logging.StreamHandler(sys.stdout)
+            logging.StreamHandler(sys.stdout)  # 仅输出到控制台
         ]
     )
 
@@ -93,7 +87,7 @@ def main():
         logger=logger
     )
 
-    logger.info(f"\n\n* 如果需要强行停止下载请执行: * \n\npkill yt-dlp")
+    logger.info(f"\n\n* 如果需要强行停止下载请执行: * \n\npkill yt-dlp\n")
 
 def extract_episode_number(url):
     """从URL中提取集数用于排序"""
