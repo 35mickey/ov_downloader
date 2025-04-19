@@ -44,14 +44,15 @@ def main():
     logger.info(f"总集数: {len(result['episode_urls'])}")
     logger.info("\n所有剧集URL:")
 
-    # 按URL名称排序
+    # 按字符串顺序排序
     sorted_episodes = sorted(
-        enumerate(result['episode_urls'], 1),
-        key=lambda x: extract_episode_number(x[1])
+        result['episode_urls'],
+        key=lambda url: format_number(url)   # 扩展数字方便排序
     )
 
-    for i, url in sorted_episodes:
-        logger.info(f"{i}. {url}")
+    # 按字符串顺序排序
+    for idx, url in enumerate(sorted_episodes, start=1):
+        logger.info(f"{idx}. {url}")
 
     # 创建下载目录
     download_dir = os.path.join(os.path.dirname(__file__), result['title'])
@@ -82,16 +83,17 @@ def main():
 
     logger.info(f"\n准备下载以下集数: {episodes_to_download}")
 
-    # 下载剧集
+    # 修改点2：确保下载时也使用排序后的URL列表
+    sorted_urls = sorted(result['episode_urls'])
     download_episodes(
-        urls=[result['episode_urls'][ep-1] for ep in episodes_to_download],
+        urls=[sorted_urls[ep-1] for ep in episodes_to_download],
         output_dir=download_dir,
         title=result['title'],
         episode_numbers=episodes_to_download,
         logger=logger
     )
 
-    logger.info(f"\n* 如果需要强行停止下载请执行: * \n\npkill yt-dlp")
+    logger.info(f"\n\n* 如果需要强行停止下载请执行: * \n\npkill yt-dlp")
 
 def extract_episode_number(url):
     """从URL中提取集数用于排序"""
@@ -109,6 +111,21 @@ def extract_episode_number(url):
         return int(match.group(1))
 
     return 0
+
+def format_number(url):
+    """
+    将url中所有小于100的数字扩展成3位数（高位补0）
+    例如：'386769-0-0.html' -> '386769-000-000.html'
+         '386769-1-10.html' -> '386769-001-010.html'
+    """
+    def pad_match(match):
+        num = int(match.group())
+        if num < 100:
+            return f"{num:03d}"  # 补零到3位
+        return match.group()  # 大于等于100的数字保持不变
+
+    # 使用正则表达式查找所有数字
+    return re.sub(r'\d+', pad_match, url)
 
 if __name__ == "__main__":
     import re  # 添加re模块导入
