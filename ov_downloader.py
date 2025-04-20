@@ -33,10 +33,11 @@ def main():
 
     logger = setup_logging(result['title'])
 
-    logger.info("\n=== 电视剧信息 ===")
+    logger.info(f"目标URL: {url}\n")
+    logger.info(f"=== 电视剧信息 ===")
     logger.info(f"名称: {result['title']}")
-    logger.info(f"总集数: {len(result['episode_urls'])}")
-    logger.info("\n所有剧集URL:")
+    logger.info(f"总集数: {len(result['episode_urls'])}\n")
+    logger.info(f"=== 所有剧集URL ===")
 
     # 按字符串顺序排序
     sorted_episodes = sorted(
@@ -53,12 +54,13 @@ def main():
     os.makedirs(download_dir, exist_ok=True)
 
     # 获取用户输入
-    user_input = input("\n请输入要下载的集数(如: 1 或 1-5), 直接回车下载全部: ").strip()
+    user_input = input("\n请输入要下载的集数(如: 1 或 1-5): ").strip()
 
     # 处理用户输入
     if not user_input:
-        # 下载全部
-        episodes_to_download = list(range(1, len(result['episode_urls']) + 1))
+        # 没有输入，优雅退出
+        logger.error("未输入集数范围")
+        return
     elif '-' in user_input:
         # 处理范围
         start, end = map(int, user_input.split('-'))

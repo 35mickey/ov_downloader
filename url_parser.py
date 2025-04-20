@@ -2,6 +2,7 @@ import cloudscraper
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
 import re,time,random
+import html
 
 USER_AGENTS = [
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
@@ -63,8 +64,13 @@ def parse_video_page(url):
             print("Cloudflare protection detected. Trying to bypass...")
             # 可以添加重试逻辑或其他处理
 
+        # 反转义，去除所有反斜杠.
         response.encoding = 'utf-8'
-        soup = BeautifulSoup(response.text, 'html.parser')
+        html_text = html.unescape(response.text)
+        html_text = re.sub(r'\\(["/])', r'\1', html_text)
+
+        # 生产soup对象
+        soup = BeautifulSoup(html_text, 'html.parser')
 
         # 提取电视剧名称
         title = extract_title(soup, url)
@@ -114,59 +120,90 @@ def extract_title(soup, url):
 
     return title
 
-def extract_episode_urls(soup, base_url):
-    episode_urls = []
-
-    # 针对第一个网站的特殊处理
-    if "jslpsp.com" in base_url:
-        # 查找所有包含"播放我的后半生"的链接
-        episode_links = soup.find_all('a', class_='module-play-list-link',
-                                   string=lambda text: text and '播放我的后半生' in text)
-        if not episode_links:
-            # 或者查找所有包含"第XX集"的链接
-            episode_links = soup.find_all('a', class_='module-play-list-link',
-                                        string=lambda text: text and '第' in text and '集' in text)
-
-    # 其他网站的通用处理
-    else:
-        # 原来的提取逻辑
-        episode_links = soup.find_all('a', string=lambda text: text and '第' in text and '集' in text)
-        if not episode_links:
-            episode_links = soup.find_all('a', string=lambda text: text and any(char.isdigit() for char in text))
-        if not episode_links:
-            episode_links = soup.find_all('a', class_=lambda cls: cls and ('play' in cls or 'episode' in cls))
-        if not episode_links:
-            episode_links = soup.find_all('a', href=lambda href: href and ('vodplay' in href or 'bo' in href or 'play' in href))
-
-    for link in episode_links:
-        href = link.get('href')
-        if href:
-            full_url = urljoin(base_url, href)
-            episode_urls.append(full_url)
-
-    # 去重
-    episode_urls = list(set(episode_urls))
-
-    # 按集数排序
-    try:
-        episode_urls.sort(key=lambda x: extract_episode_number(x))
-    except:
-        pass
-
-    return episode_urls
-
 def extract_episode_number(url):
+    """增强版集数提取函数，支持多种数字格式"""
     # 尝试从URL中提取集数
-    match = re.search(r'第(\d+)集', url)
-    if match:
-        return int(match.group(1))
+    patterns = [
+        r'第(\d+)集',      # 第01集
+        r'(\d+)\.html',    # 1.html
+        r'-(\d+)-',        # -1-
+        r'/(\d+)/',        # /1/
+        r'_(\d+)_',        # _1_
+        r'(\d+)$',         # 结尾的数字
+        r'(\d+)\.mp4'      # 1.mp4
+    ]
 
-    match = re.search(r'(\d+)\.html', url)
-    if match:
-        return int(match.group(1))
+    for pattern in patterns:
+        match = re.search(pattern, url)
+        if match:
+            return int(match.group(1))
 
-    match = re.search(r'-(\d+)-', url)
-    if match:
-        return int(match.group(1))
+    # 如果从URL无法提取，尝试从链接文本中提取
+    if '第' in url and '集' in url:
+        match = re.search(r'第(\d+)集', url)
+        if match:
+            return int(match.group(1))
 
-    return 0
+    return 0  # 默认值
+
+def extract_episode_urls(soup, base_url):
+    """最终版剧集URL提取函数，支持各种嵌套结构和数字格式"""
+    episode_urls = []
+    seen_urls = set()
+
+    def add_url(url, text=None):
+        """添加URL到结果集并确保唯一性"""
+        full_url = urljoin(base_url, url)
+        if full_url not in seen_urls:
+            seen_urls.add(full_url)
+            episode_urls.append((full_url, text))
+
+    # 定义匹配规则（按优先级排序）
+    matching_rules = [
+        # 规则1：匹配明确包含"第X集"的链接
+        {
+            'name': 'explicit_episode_links',
+            'finder': lambda: [(a['href'], a.get_text())
+                             for a in soup.find_all('a', href=True)
+                             if '第' in (text := a.get_text().strip()) and '集' in text]
+        },
+
+        # 规则2：匹配包含数字的链接文本
+        {
+            'name': 'numeric_links',
+            'finder': lambda: [(a['href'], a.get_text())
+                             for a in soup.find_all('a', href=True)
+                             if any(char.isdigit() for char in a.get_text())]
+        },
+
+        # 规则3：匹配URL中包含"bo"的链接
+        {
+            'name': 'bo_links',
+            'finder': lambda: [(a['href'], None)
+                             for a in soup.find_all('a', href=True)
+                             if 'bo' in a['href']]
+        },
+
+        # 规则4：匹配特定class的ul>li>a结构
+        {
+            'name': 'structured_links',
+            'finder': lambda: [(a['href'], a.get_text())
+                             for ul in soup.find_all('ul', class_=lambda x: x and ('ulli' in x or 'clearfix' in x))
+                             for li in ul.find_all('li')
+                             for a in li.find_all('a', href=True)]
+        }
+    ]
+
+    # 应用匹配规则
+    for rule in matching_rules:
+        try:
+            for href, text in rule['finder']():
+                add_url(href, text)
+            if episode_urls:
+                print(f"分集URL提取方式: {rule['name']}")
+                break
+        except Exception as e:
+            continue
+
+    # 返回URL列表
+    return [url for url, _ in episode_urls]
