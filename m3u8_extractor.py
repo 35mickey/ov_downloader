@@ -3,6 +3,7 @@ import re,time,random
 import json
 from urllib.parse import urljoin,unquote
 from url_parser import create_scraper,USER_AGENTS
+import html
 
 def extract_m3u8_url(page_url):
     """优化后的m3u8链接提取函数"""
@@ -12,7 +13,7 @@ def extract_m3u8_url(page_url):
             return None
 
         # 去除所有反斜杠（包括转义和未转义的）
-        url = url.replace('\\/', '/').replace('\\\\', '/')
+        url = url.replace('\\\\', '/').replace('\\/', '/').replace('\/', '/')
 
         # URL解码
         url = unquote(url)
@@ -57,8 +58,10 @@ def extract_m3u8_url(page_url):
         if "Cloudflare" in response.text or "Just a moment" in response.text:
             raise Exception("触发Cloudflare防护，请手动解决验证码")
 
+        # 反转义，去除所有反斜杠.
         response.encoding = 'utf-8'
-        html = response.text
+        html_text = html.unescape(response.text)
+        html_text = re.sub(r'\\([\\"\/n])', r'\1', html_text)
 
         # 所有可能的提取方法（按优先级排序）
         extraction_patterns = [
@@ -81,7 +84,7 @@ def extract_m3u8_url(page_url):
         # 尝试每种提取方法
         for pattern, processor in extraction_patterns:
             try:
-                match = re.search(pattern, html, re.DOTALL)
+                match = re.search(pattern, html_text, re.DOTALL)
                 if match:
                     url = processor(match)
                     normalized_url = normalize_m3u8_url(url)

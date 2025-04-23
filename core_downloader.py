@@ -34,12 +34,12 @@ def download_episodes(urls, output_dir, title, episode_numbers, logger=None):
                 '--no-warnings',
                 '--retries', '10',
                 '--fragment-retries', '20',
-                '--file-access-retries', '5',
+                '--file-access-retries', '8',
                 '--no-part',
                 '--hls-use-mpegts',
                 '--console-title',  # 在终端标题显示进度
                 '--compat-options', 'no-live-chat',  # 禁用非必要功能
-                '--throttled-rate', '200K',  # 最低保留下载速度
+                '--throttled-rate', '100K',  # 最低保留下载速度
                 '--socket-timeout', '30',  # 网络超时设置
                 '--source-address', '0.0.0.0',  # 多IP绑定
                 '-o', output_file,
@@ -49,7 +49,7 @@ def download_episodes(urls, output_dir, title, episode_numbers, logger=None):
             ]
 
             # 创建进度日志文件
-            progress_log = os.path.join(output_dir, f"第{ep_num}集_progress.log")
+            progress_log = os.path.join(output_dir, f"episode_{ep_num}_progress.log")
 
             with open(progress_log, 'w') as log_file:
                 process = subprocess.Popen(
