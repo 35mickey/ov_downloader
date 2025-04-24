@@ -53,20 +53,19 @@ def main():
     download_dir = os.path.join(os.path.dirname(__file__), result['title'])
     os.makedirs(download_dir, exist_ok=True)
 
-    # 获取用户输入
+    # 获取用户输入后添加确认提示
     user_input = input("\n请输入要下载的集数(如: 1 或 1-5): ").strip()
 
     # 处理用户输入
     if not user_input:
-        # 没有输入，优雅退出
         logger.error("未输入集数范围")
         return
-    elif '-' in user_input:
-        # 处理范围
+
+    # 处理集数范围
+    if '-' in user_input:
         start, end = map(int, user_input.split('-'))
         episodes_to_download = list(range(start, end + 1))
     else:
-        # 单集
         episodes_to_download = [int(user_input)]
 
     # 验证输入范围
@@ -77,9 +76,21 @@ def main():
         logger.error("无效的集数范围")
         return
 
-    logger.info(f"\n准备下载以下集数: {episodes_to_download}")
+    # 处理输入后添加详细反馈
+    logger.info("\n=== 下载设置 ===")
+    logger.info(f"电视剧名称: {result['title']}")
+    logger.info(f"下载集数: {episodes_to_download}")
+    logger.info(f"存储目录: {download_dir}")
 
-    # 修改点2：确保下载时也使用排序后的URL列表
+    # 添加确认步骤
+    confirm = input("\n确认开始下载？(Y/n): ").strip().lower()
+    if confirm and confirm != 'y':
+        logger.info("下载已取消")
+        return
+
+    logger.info(f"准备下载以下集数: {episodes_to_download}")
+
+    # 确保下载时也使用排序后的URL列表
     sorted_urls = sorted(result['episode_urls'])
     download_episodes(
         urls=[sorted_urls[ep-1] for ep in episodes_to_download],
@@ -88,8 +99,6 @@ def main():
         episode_numbers=episodes_to_download,
         logger=logger
     )
-
-    logger.info(f"\n\n* 如果需要强行停止下载请执行: * \n\npkill yt-dlp\n")
 
 def extract_episode_number(url):
     """从URL中提取集数用于排序"""
