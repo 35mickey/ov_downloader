@@ -5,17 +5,11 @@ Online video downloader, only support m3u8 yet
 
 # Dependency
 ```
-# 安装 venv
-sudo apt install python3-venv yt-dlp
-
-# 创建虚拟环境
-python3 -m venv ~/.venv/ov_downloader
-
-# 激活虚拟环境
-source ~/.venv/ov_downloader/bin/activate
-
-# 安装 cloudscraper,bs4
-pip install cloudscraper beautifulsoup4
+# 安装 cloudscraper, bs4, psutil
+pip install cloudscraper beautifulsoup4 psutil
 ```
 
 # How to Use
+```
+python3 ov_downloader.py [在线视频链接]
+```

@@ -77,7 +77,7 @@ def main():
         return
 
     # 处理输入后添加详细反馈
-    logger.info("\n=== 下载设置 ===")
+    logger.info("=== 下载设置 ===")
     logger.info(f"电视剧名称: {result['title']}")
     logger.info(f"下载集数: {episodes_to_download}")
     logger.info(f"存储目录: {download_dir}")
