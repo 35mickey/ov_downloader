@@ -192,6 +192,7 @@ def download_episodes(urls, output_dir, title, episode_numbers, logger=None):
                 '--progress',
                 '-o', output_file,
                 '--merge-output-format', 'mp4',
+                '--socket-timeout 60',
                 '--verbose',
                 m3u8_url
             ]
