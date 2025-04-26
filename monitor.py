@@ -25,7 +25,7 @@ def get_download_status(output_dir: str) -> Dict:
 
 def get_progress(output_dir: str, ep_num: int) -> Optional[float]:
     """从日志文件中获取下载进度"""
-    log_file = os.path.join(output_dir, f"episode_{ep_num}_progress.log")
+    log_file = os.path.join(output_dir, f"ep_{ep_num}_progress.log")
     if not os.path.exists(log_file):
         return None
 

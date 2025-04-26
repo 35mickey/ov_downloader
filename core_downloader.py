@@ -9,7 +9,8 @@ import random
 import json
 import signal
 from m3u8_extractor import extract_m3u8_url
-from urllib.parse import urljoin
+import re
+from urllib.parse import urlparse
 
 # 缓存m3u8链接的文件名
 M3U8_CACHE_FILE = "m3u8_cache.json"
@@ -141,6 +142,26 @@ def write_pid_file(output_dir):
     with open(pid_file, 'w') as f:
         f.write(str(os.getpid()))
 
+def extract_anthology_and_episode(url):
+    """从URL中提取anthology和集数"""
+    path = urlparse(url).path  # 获取URL的路径部分
+
+    # 使用正则表达式提取最后一个'-'后面的数字
+    episode_match = re.search(r'-([0-9]+)(?:[/?]|$)', path)
+    if episode_match:
+        episode_number = episode_match.group(1)  # 提取数字部分
+    else:
+        episode_number = None
+
+    # 提取最后一个'-'前面到最近的'/'之间的字符串作为anthology
+    anthology_match = re.search(r'/([^/]+)-[0-9]+(?:[/?]|$)', path)
+    if anthology_match:
+        anthology = anthology_match.group(1)  # 提取anthology部分
+    else:
+        anthology = None
+
+    return anthology, episode_number
+
 def download_episodes(urls, output_dir, title, episode_numbers, logger=None):
     if logger is None:
         logger = logging.getLogger(__name__)
@@ -169,7 +190,7 @@ def download_episodes(urls, output_dir, title, episode_numbers, logger=None):
         clear_stop_flag(output_dir)  # 开始前清除停止标志
         status = get_download_status(output_dir)
 
-        for ep_num in episode_numbers:
+        for ep_num, url in zip(episode_numbers, urls):
             if check_stop_flag(output_dir):  # 检查停止标志
                 logger.info("检测到停止请求，终止下载")
                 break
@@ -179,12 +200,19 @@ def download_episodes(urls, output_dir, title, episode_numbers, logger=None):
                 continue
 
             m3u8_url = m3u8_cache[str_ep_num]
-            progress_log = os.path.join(output_dir, f"episode_{ep_num}_progress.log")
+            progress_log = os.path.join(output_dir, f"ep_{ep_num}_progress.log")
 
             # 清空进度日志
             open(progress_log, 'w').close()
 
-            output_file = os.path.join(output_dir, f"{title}_第{ep_num}集.%(ext)s")
+            # 提取anthology和集数
+            anthology, episode_number = extract_anthology_and_episode(url)
+            if not anthology or not episode_number:
+                logger.error(f"⚠️ 无法从URL提取anthology或集数: {url}")
+                continue
+
+            # 生成输出文件名
+            output_file = os.path.join(output_dir, f"{title}_源{anthology}_第{episode_number}集.%(ext)s")
 
             cmd = [
                 'yt-dlp',
@@ -245,7 +273,7 @@ def download_episodes(urls, output_dir, title, episode_numbers, logger=None):
     logger.info(f"📁 下载目录: {output_dir}")
     logger.info("📋 可以通过以下方式查看详细进度:")
     for ep_num in episode_numbers:
-        progress_log = os.path.join(output_dir, f"episode_{ep_num}_progress.log")
+        progress_log = os.path.join(output_dir, f"ep_{ep_num}_progress.log")
         logger.info(f"  tail -f '{progress_log}'  # 查看第 {ep_num} 集进度")
 
     logger.info(f"🛑 停止所有下载: python monitor.py {title} --stop")

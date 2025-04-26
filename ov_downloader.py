@@ -91,31 +91,13 @@ def main():
     logger.info(f"准备下载以下集数: {episodes_to_download}")
 
     # 确保下载时也使用排序后的URL列表
-    sorted_urls = sorted(result['episode_urls'])
     download_episodes(
-        urls=[sorted_urls[ep-1] for ep in episodes_to_download],
+        urls=[sorted_episodes[ep-1] for ep in episodes_to_download],
         output_dir=download_dir,
         title=result['title'],
         episode_numbers=episodes_to_download,
         logger=logger
     )
-
-def extract_episode_number(url):
-    """从URL中提取集数用于排序"""
-    # 尝试从URL中提取集数
-    match = re.search(r'第(\d+)集', url)
-    if match:
-        return int(match.group(1))
-
-    match = re.search(r'(\d+)\.html', url)
-    if match:
-        return int(match.group(1))
-
-    match = re.search(r'-(\d+)-', url)
-    if match:
-        return int(match.group(1))
-
-    return 0
 
 def format_number(url):
     """

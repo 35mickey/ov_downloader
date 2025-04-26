@@ -205,5 +205,8 @@ def extract_episode_urls(soup, base_url):
         except Exception as e:
             continue
 
-    # 返回URL列表
-    return [url for url, _ in episode_urls]
+    # 过滤仅包含'-'的URL
+    filtered_urls = [url for url, _ in episode_urls if '-' in url]
+
+    # 返回过滤后的URL列表
+    return filtered_urls
