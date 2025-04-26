@@ -147,14 +147,14 @@ def extract_anthology_and_episode(url):
     path = urlparse(url).path  # 获取URL的路径部分
 
     # 使用正则表达式提取最后一个'-'后面的数字
-    episode_match = re.search(r'-([0-9]+)(?:[/?]|$)', path)
+    episode_match = re.search(r'-([0-9]+)(?:\.[a-zA-Z0-9]+)?$', path)
     if episode_match:
         episode_number = episode_match.group(1)  # 提取数字部分
     else:
         episode_number = None
 
     # 提取最后一个'-'前面到最近的'/'之间的字符串作为anthology
-    anthology_match = re.search(r'/([^/]+)-[0-9]+(?:[/?]|$)', path)
+    anthology_match = re.search(r'/([^/]+)-[0-9]+(?:-[0-9]+)?(?:\.[a-zA-Z0-9]+)?$', path)
     if anthology_match:
         anthology = anthology_match.group(1)  # 提取anthology部分
     else:
