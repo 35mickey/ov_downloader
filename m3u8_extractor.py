@@ -1,3 +1,4 @@
+import logging
 import cloudscraper
 import re,time,random
 import json
@@ -44,6 +45,7 @@ def extract_m3u8_url(page_url):
         for attempt in range(3):
             try:
                 response = scraper.get(page_url, headers=headers, timeout=30)
+                time.sleep(1) # 确保请求间隔, 防止内部服务器错误
                 if response.status_code == 403:
                     headers['User-Agent'] = random.choice(USER_AGENTS)
                     response = scraper.get(page_url + '?bypass=1', headers=headers)

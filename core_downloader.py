@@ -47,9 +47,14 @@ def get_download_status(output_dir: str) -> Dict:
             return json.load(f)
     return {"completed": [], "failed": [], "progress": {}}
 
-def save_download_status(output_dir: str, status: Dict):
-    """保存下载状态"""
+def save_download_status(output_dir: str, status: Dict, original_url: Optional[str] = None):
+    """保存下载状态，并包含原始脚本入参URL"""
     status_file = os.path.join(output_dir, DOWNLOAD_STATUS_FILE)
+
+    # 如果提供了原始URL，将其添加到状态中
+    if original_url:
+        status["original_url"] = original_url
+
     with open(status_file, 'w', encoding='utf-8') as f:
         json.dump(status, f, ensure_ascii=False, indent=2)
 
@@ -205,14 +210,8 @@ def download_episodes(urls, output_dir, title, episode_numbers, logger=None):
             # 清空进度日志
             open(progress_log, 'w').close()
 
-            # 提取anthology和集数
-            anthology, episode_number = extract_anthology_and_episode(url)
-            if not anthology or not episode_number:
-                logger.error(f"⚠️ 无法从URL提取anthology或集数: {url}")
-                continue
-
             # 生成输出文件名
-            output_file = os.path.join(output_dir, f"{title}_源{anthology}_第{episode_number}集.%(ext)s")
+            output_file = os.path.join(output_dir, f"{title}_第{ep_num}集.%(ext)s")
 
             cmd = [
                 'yt-dlp',

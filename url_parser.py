@@ -120,32 +120,6 @@ def extract_title(soup, url):
 
     return title
 
-def extract_episode_number(url):
-    """增强版集数提取函数，支持多种数字格式"""
-    # 尝试从URL中提取集数
-    patterns = [
-        r'第(\d+)集',      # 第01集
-        r'(\d+)\.html',    # 1.html
-        r'-(\d+)-',        # -1-
-        r'/(\d+)/',        # /1/
-        r'_(\d+)_',        # _1_
-        r'(\d+)$',         # 结尾的数字
-        r'(\d+)\.mp4'      # 1.mp4
-    ]
-
-    for pattern in patterns:
-        match = re.search(pattern, url)
-        if match:
-            return int(match.group(1))
-
-    # 如果从URL无法提取，尝试从链接文本中提取
-    if '第' in url and '集' in url:
-        match = re.search(r'第(\d+)集', url)
-        if match:
-            return int(match.group(1))
-
-    return 0  # 默认值
-
 def extract_episode_urls(soup, base_url):
     """最终版剧集URL提取函数，支持各种嵌套结构和数字格式"""
     episode_urls = []
@@ -174,23 +148,6 @@ def extract_episode_urls(soup, base_url):
             'finder': lambda: [(a['href'], a.get_text())
                              for a in soup.find_all('a', href=True)
                              if any(char.isdigit() for char in a.get_text())]
-        },
-
-        # 规则3：匹配URL中包含"bo"的链接
-        {
-            'name': 'bo_links',
-            'finder': lambda: [(a['href'], None)
-                             for a in soup.find_all('a', href=True)
-                             if 'bo' in a['href']]
-        },
-
-        # 规则4：匹配特定class的ul>li>a结构
-        {
-            'name': 'structured_links',
-            'finder': lambda: [(a['href'], a.get_text())
-                             for ul in soup.find_all('ul', class_=lambda x: x and ('ulli' in x or 'clearfix' in x))
-                             for li in ul.find_all('li')
-                             for a in li.find_all('a', href=True)]
         }
     ]
 
@@ -206,7 +163,7 @@ def extract_episode_urls(soup, base_url):
             continue
 
     # 过滤仅包含'-'的URL
-    filtered_urls = [url for url, _ in episode_urls if '-' in url]
+    filtered_urls = [(url, text) for url, text in episode_urls if '-' in url]
 
-    # 返回过滤后的URL列表
+    # 返回过滤后的(URL,text)列表
     return filtered_urls
