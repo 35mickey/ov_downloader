@@ -15,6 +15,7 @@ def extract_m3u8_url(page_url):
 
         # 去除所有反斜杠（包括转义和未转义的）
         url = url.replace('\\\\', '/').replace('\\/', '/').replace('\/', '/')
+        url = url.replace('\//','/').replace('\\','/')
 
         # URL解码
         url = unquote(url)

@@ -134,12 +134,12 @@ def extract_episode_urls(soup, base_url):
 
     # 定义匹配规则（按优先级排序）
     matching_rules = [
-        # 规则1：匹配明确包含"第X集"的链接
+        # 规则1：匹配明确包含"第X集"或"第X话"的链接
         {
             'name': 'explicit_episode_links',
             'finder': lambda: [(a['href'], a.get_text())
                              for a in soup.find_all('a', href=True)
-                             if '第' in (text := a.get_text().strip()) and '集' in text]
+                             if '第' in (text := a.get_text().strip()) and ('集' in text or '话' in text)]
         },
 
         # 规则2：匹配包含数字的链接文本

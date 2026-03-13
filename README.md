@@ -20,3 +20,7 @@ python3 ov_downloader.py [在线视频链接]
 # 监控下载状态
 python3 monitor.py [视频下载目录]
 ```
+
+# 支持网站
+
+樱花动漫 | https://www.yhdmu.com/

@@ -23,8 +23,9 @@ def setup_logging(title):
 def extract_episode_number(text):
     """
     从描述文本中提取集数，例如从 '第10集' 提取 10
+    匹配'第x集'或'第x话'
     """
-    match = re.search(r'第(\d+)集', text)
+    match = re.search(r'第(\d+)(?:集|话)', text)
     return int(match.group(1)) if match else None
 
 def main():
